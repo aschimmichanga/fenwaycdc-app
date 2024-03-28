@@ -1,12 +1,73 @@
 import React from 'react';
-import { GluestackUIProvider, Text, Box } from "@gluestack-ui/themed"
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Image, Text, View, TextInput, useColorScheme, Pressable } from "react-native"
+import Logo from "./src/assets/logo.png"
 
 export default function App() {
   return (
-    <GluestackUIProvider>
-      <Box width="100%" height="100%" justifyContent="center" alignItems="center">
-        <Text>Open up App.js to start working on your app!</Text>
-      </Box>
-    </GluestackUIProvider>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login' }} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: 'Sign Up' }} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+function SignUpScreen() {
+  return (
+    <View>
+      <Text>Sign Up</Text>
+    </View>
+  );
+}
+
+function LoginScreen() {
+  const [email, setEmail] = React.useState();
+  const [password, setPassword] = React.useState();
+  const colorScheme = useColorScheme();
+  const textColor = colorScheme === 'dark' ? 'text-white' : 'text-black';
+  const isLoginDisabled = !email || !password;
+
+  const onLogin = () => {
+    // TODO: Add firebase authentication here
+    console.log(email, password);
+    navigation.navigate('SignUp')
+  }
+
+  return (
+    <View className="flex pt-[100] px-[48] justify-center items-center w-full">
+      <Image source={Logo} className="h-24 w-56" />
+      <Text className="text-3xl text-blue-400 font-bold pt-4 pb-2">Fenway CDC</Text>
+      <Text className={`text-md text-center ${textColor} font-bold pb-4`}>Improving Lives and Building Community</Text>
+      <View className="flex gap-2 justify-start w-full">
+        <Text className={`${textColor}`}>Email</Text>
+        <TextInput
+          className="border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md mb-2"
+          onChangeText={setEmail}
+          value={email}
+          placeholder="Enter your email here."
+          keyboardType="email-address"
+          autoComplete="email"
+        />
+        <Text className={`${textColor} text-left justify-start`}>Password</Text>
+        <TextInput
+          className="border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md"
+          onChangeText={setPassword}
+          value={password}
+          placeholder="Enter your password here."
+          autoComplete="current-password"
+          secureTextEntry={true}
+        />
+        <Pressable onPress={() => { navigation.navigate('ForgotPassword') }}>
+          <Text className="font-bold text-blue-800 active:text-blue-700 mb-3">Forgot password</Text>
+        </Pressable>
+        <Pressable disabled={isLoginDisabled} onPress={onLogin} className={`${isLoginDisabled ? "bg-blue-200" : "bg-blue-800"} active:bg-blue-700 rounded-md`}>
+          <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Login</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }

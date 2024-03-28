@@ -40,7 +40,7 @@ function BuyTicketsScreen({ hasTicket, buyTicket }) {
         <Text className="text-gray-700 mb-4">Experience the magic of the Fenway Ball! Your generous participation will enable Fenway CDC to improve the economic and social well-being of over 2,500 residents.</Text>
         <Text className="text-gray-700 mb-4 font-bold">You must buy a ticket to access the rest of the app.</Text>
         <Text className="font-bold text-gray-900 mb-5">Date: April 30th, 2024</Text>
-        <Pressable onPress={buyTicket} className={`bg-blue-500 rounded-md py-2 ${!hasTicket ? "" : "bg-gray-400"}`} disabled={hasTicket}>
+        <Pressable onPress={buyTicket} className={`bg-blue-800 active:bg-blue-700 rounded-md py-2 ${!hasTicket ? "" : "bg-gray-400"}`} disabled={hasTicket}>
           <Text className="text-white text-center font-bold">{hasTicket ? "Ticket Purchased" : "Buy Ticket"}</Text>
         </Pressable>
         <Pressable onPress={openURL}>

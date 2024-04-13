@@ -1,8 +1,8 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Image, Text, View, TextInput, Pressable, SafeAreaView, Linking, Alert } from "react-native"
-import Logo from "./src/assets/logo.png"
+import { Text, View, TextInput, Pressable, SafeAreaView, Linking, Alert } from "react-native"
+import Logo from './assets/logo.png';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -13,11 +13,30 @@ export default function App() {
           <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login' }} />
           <Stack.Screen name="Signup" component={SignUpScreen} options={{ title: 'Sign Up' }} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
-          <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Deals" component={DealsScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaView>
   );
+}
+
+function DealsScreen({ navigation }) {
+  <View className="flex-1 p-4 bg-gray-100">
+    <FlatList
+      data={deals}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <View className="bg-white p-5 m-2 rounded-lg shadow">
+          <Text className="text-lg font-bold">{item.name}</Text>
+          <Text className="text-sm">{item.discount}</Text>
+          <Text className="text-xs mb-4">{item.expiry}</Text>
+          <TouchableOpacity className="bg-blue-500 text-white py-2 rounded text-center">
+            <Text className="text-white text-center">Redeem</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    />
+  </View>
 }
 
 function BuyTicketsScreen({ hasTicket, buyTicket }) {
@@ -76,9 +95,9 @@ function ForgotPasswordScreen({ navigation }) {
   return (
     isEmailSent ? (
       // View to show after email has been sent
-      <View className="flex pt-[56] px-10 justify-center items-center w-full">
-        <Text className="text-md text-center text-black font-bold pb-4">An email has been sent to {email} with instructions to reset your password.</Text>
-        <Pressable onPress={() => { navigation.navigate('Login') }} className="bg-blue-800 active:bg-blue-700 rounded-md">
+      <View className="flex pt-[24] px-6 w-full">
+        <Text className="text-md text-black pb-4 w-full">An email has been sent to <Text className="font-bold">{email}</Text> with instructions to reset your password.</Text>
+        <Pressable onPress={() => { navigation.navigate('Login') }} className="bg-blue-800 active:bg-blue-700 rounded-md w-full">
           <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Back to Login</Text>
         </Pressable>
       </View>
@@ -140,7 +159,7 @@ function SignUpScreen({ navigation }) {
           secureTextEntry={true}
         />
       </View>
-      <Pressable disabled={isSignUpDisabled} onPress={() => { navigation.navigate('Home') }} className={`${isSignUpDisabled ? "bg-blue-200" : "bg-blue-800"} active:bg-blue-700 rounded-md`}>
+      <Pressable disabled={isSignUpDisabled} onPress={() => { navigation.navigate('Deals') }} className={`${isSignUpDisabled ? "bg-blue-200" : "bg-blue-800"} active:bg-blue-700 rounded-md`}>
         <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Continue</Text>
       </Pressable>
     </View >

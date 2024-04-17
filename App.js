@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { useState, useEffect, useRef } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ScrollView, FlatList, Image, Text, View, TextInput, Pressable, SafeAreaView, Linking, Alert } from "react-native"
+import { TouchableOpacity, ScrollView, FlatList, Image, Text, View, TextInput, Pressable, SafeAreaView, Linking, Alert, Dimensions } from "react-native"
 import Logo from './src/assets/logo.png';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SearchBar } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
+import LinearGradient from 'react-native-linear-gradient';
+import { deals } from './src/data';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -13,10 +15,23 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1 }}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Deals">
+          <Stack.Navigator initialRouteName="Home">
             <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login', headerBackVisible: false }} />
             <Stack.Screen name="Signup" component={SignUpScreen} options={{ title: 'Sign Up' }} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
+            <Stack.Screen name="Home" component={HomeScreen} options={{
+              headerTitle: () => (
+                <View className="py-4">
+                  <Image
+                    source={{ uri: "https://res.cloudinary.com/dguy8o0uf/image/upload/v1713118871/FenwayCDC_4c_Footer_237x101_2_1_lsad0x.png" }}
+                    style={{ width: 130, height: 50 }}
+                    resizeMode="contain"
+                  />
+                </View>
+              ),
+              headerTitleAlign: 'center',
+              headerBackVisible: false,
+            }} />
             <Stack.Screen name="Deals" component={DealsScreen} options={({ navigation }) => ({
               title: 'Featured Deals',
               headerRight: () => (
@@ -53,6 +68,102 @@ export default function App() {
       </SafeAreaView>
     </SafeAreaProvider >
   );
+}
+
+const openLink = (url) => {
+  Linking.canOpenURL(url).then(supported => {
+    if (supported) {
+      Linking.openURL(url);
+    } else {
+      console.log("Can't handle URL: " + url);
+    }
+  }).catch(err => console.error("An error occurred", err));
+}
+
+const Hyperlink = ({ url, className = "", children }) => {
+  const handlePress = () => {
+    openLink(url)
+  };
+
+  return (
+    <TouchableOpacity onPress={handlePress}>
+      <Text className={"text-blue-900 font-bold pl-4 pb-1 " + className}>{children}</Text>
+    </TouchableOpacity>
+  );
+};
+
+const width = Dimensions.get('window').width;
+
+function HomeScreen({ navigation }) {
+  const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1713118353/apple-event.64d9fae8.jpeg_1_b9hug5.png"
+
+  return (
+    <ScrollView className="pt-10 pb-[100] bg-white h-full">
+      <TouchableOpacity onPress={() => { openLink("https://www.fenwaycdc.org/events/tasteofthefenway/") }} className="flex flex-col">
+        <Image
+          className="rounded-md w-full h-[180]"
+          source={{ uri: top_ad }}
+          resizeMode='contain'
+        />
+      </TouchableOpacity>
+      <View className="pl-8 pt-4">
+        <View className="flex flex-row pr-8 justify-between">
+          <Text className="text-lg font-bold">Latest deals</Text>
+          <Pressable className="flex flex-row pt-1" onPress={() => navigation.navigate('Deals')}>
+            <Text className="text-blue-800 text-md">View all</Text>
+          </Pressable>
+        </View>
+        <ScrollView horizontal className="flex gap-5 pt-2">
+          {deals.slice(0, 5).map((deal, index) => (
+            <Pressable
+              key={index}
+              onPress={() => { navigation.navigate('DealDetails', { deal }) }}
+              style={{ backgroundColor: "black", width: width * 0.75, margin: 10, borderRadius: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}
+              className="bg-white w-3/4 h-auto rounded-lg shadow">
+              <Image
+                source={{ uri: deal.imageUrl }}
+                style={{ height: 160, width: '100%', borderRadius: 8 }}
+                resizeMode='contain'
+              />
+              <View className="absolute bottom-8 pt-10 left-0 right-0 rounded-b-lg">
+                <LinearGradient
+                  colors={['rgba(0, 0, 0, 0.25)', 'rgba(0, 0, 0, 0.7)']} // Correct format
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={{ height: 30, width: '100%' }}>
+                  <Text className="text-white text-lg font-bold px-3">
+                    {deal.name}
+                  </Text>
+                </LinearGradient>
+              </View>
+              <View className="absolute bottom-0 left-0 right-0 px-3 pt-2 bg-white rounded-b-lg">
+                <View className="flex flex-row justify-between items-start pb-2">
+                  <View>
+                    <Text className="text-md font-semibold">{deal.discount}</Text>
+                  </View>
+                </View>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
+        <View className="flex flex-col gap-4 pr-8 pt-2 justify-between">
+          <Text className="text-lg font-bold pb-2">Get involved</Text>
+          <Hyperlink url="https://www.fenwaycdc.org/volunteer">
+            Volunteer with us
+          </Hyperlink>
+          <Hyperlink url="https://www.fenwaycdc.org/become-a-member/">
+            Become a member
+          </Hyperlink>
+          <Hyperlink url="https://www.fenwaycdc.org/events/">
+            Upcoming events
+          </Hyperlink>
+          <Hyperlink url="https://www.fenwaycdc.org/events/">
+            Support Fenway businesses
+          </Hyperlink>
+        </View>
+      </View >
+    </ScrollView >
+  )
 }
 
 function AdminScreen({ navigation }) {
@@ -240,9 +351,9 @@ function DealDetailsScreen({ route, navigation }) {
         <View className="p-4">
           <Text className="text-3xl font-bold">{deal.name}</Text>
           <Text className="text-lg text-green-600 pb-1">{deal.discount}</Text>
-          <Text className="text-md text-gray-500 italic">Expires {deal.expiry}</Text>
+          {deal.expiry ?? <Text className="text-md text-gray-500 italic">Expires {deal.expiry}</Text>}
           <Text className="text-md text-gray-700 py-4">
-            Enjoy delicious meals at {deal.name} with this exclusive deal! Redeem your offer before it expires and save on your next visit.
+            Enjoy delicious meals at {deal.name} with this exclusive deal! Redeem your offer and save on your next visit.
           </Text>
         </View>
       </ScrollView >
@@ -256,20 +367,6 @@ function DealDetailsScreen({ route, navigation }) {
 }
 
 function DealsScreen({ navigation }) {
-  const deals = [{
-    id: '1',
-    name: 'Ichiban Yakitori House',
-    discount: 'Buy 1 Get 1',
-    expiry: 'Apr 3',
-    imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
-  },
-  {
-    id: '2',
-    name: 'Tori Japan',
-    discount: '50% Off',
-    expiry: 'Apr 4',
-    imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
-  },];
   const [search, setSearch] = useState("");
   const [filteredData, setFilteredData] = useState(deals);
 
@@ -331,17 +428,14 @@ function DealsScreen({ navigation }) {
           <View className="bg-white m-2 rounded-lg shadow">
             <Image
               source={{ uri: item.imageUrl }}
-              style={{ height: 160, width: '100%', borderRadius: 8 }}
+              style={{ height: 200, width: '100%', borderRadius: 8 }}
               className="w-full"
             />
             <Pressable onPress={() => { navigation.navigate('DealDetails', { deal: item }) }} className="absolute bottom-0 left-0 right-0 px-3 pt-2 bg-white bg-opacity-50 rounded-b-lg">
               <View className="flex flex-row justify-between items-start pb-3">
                 <View>
-                  <Text className="text-black text-xl font-bold">{item.discount}</Text>
-                  <Text className="text-black text-lg">{item.name}</Text>
-                </View>
-                <View>
-                  <Text className="text-gray-500 text-md italic">Expires {item.expiry}</Text>
+                  <Text className="text-black text-lg font-bold">{item.discount}</Text>
+                  <Text className="text-black text-lg italic">{item.name}</Text>
                 </View>
               </View>
             </Pressable>
@@ -422,7 +516,7 @@ function SignUpScreen({ navigation }) {
           secureTextEntry={true}
         />
       </View>
-      <Pressable disabled={isSignUpDisabled} onPress={() => { navigation.navigate('Deals') }} className={`${isSignUpDisabled ? "bg-blue-200" : "bg-blue-800"} active:bg-blue-700 rounded-md`}>
+      <Pressable disabled={isSignUpDisabled} onPress={() => { navigation.navigate('Home') }} className={`${isSignUpDisabled ? "bg-blue-200" : "bg-blue-800"} active:bg-blue-700 rounded-md`}>
         <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Continue</Text>
       </Pressable>
     </View >
@@ -438,7 +532,7 @@ function LoginScreen({ navigation }) {
   const onLogin = () => {
     // TODO: Add firebase authentication here
     console.log(email, password);
-    navigation.navigate('Deals')
+    navigation.navigate('Home')
   }
 
   const handleLogoTap = () => {

@@ -11,14 +11,14 @@ export const categoriesImages = {
 }
 
 export const deals = [
-    {
-        id: 7,
-        name: 'Boston Red Sox',
-        discount: "Free tickets for Neighborhood Night Red Sox games, movie nights, and other events",
-        details: "Giveaways are organized for members by the Fenway CDC team when tickets are available",
-        expiry: '',
-        imageUrl: categoriesImages.red_socks
-    },
+    // {
+    //     id: 7,
+    //     name: 'Boston Red Sox',
+    //     discount: "Free tickets for Neighborhood Night Red Sox games, movie nights, and other events",
+    //     details: "Giveaways are organized for members by the Fenway CDC team when tickets are available",
+    //     expiry: '',
+    //     imageUrl: categoriesImages.red_socks
+    // },
     {
         id: 2,
         name: 'Tenderoni\'s',

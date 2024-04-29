@@ -15,42 +15,52 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1 }}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Home">
+          <Stack.Navigator initialRouteName="Login">
             <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login', headerBackVisible: false }} />
             <Stack.Screen name="Signup" component={SignUpScreen} options={{ title: 'Sign Up' }} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
-            <Stack.Screen name="Home" component={HomeScreen} options={{
+            <Stack.Screen name="Home" component={HomeScreen} options={({ navigation }) => ({
               headerTitle: () => (
-                <View className="py-4">
+                <View>
                   <Image
-                    source={{ uri: "https://res.cloudinary.com/dguy8o0uf/image/upload/v1713118871/FenwayCDC_4c_Footer_237x101_2_1_lsad0x.png" }}
-                    style={{ width: 130, height: 50 }}
+                    source={{ uri: "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714431263/FenwayCDC-VLockup-800x337-1-removebg-preview_1_uu0074.png" }}
+                    style={{ marginTop: -2, width: 80, height: 50, zIndex: 100 }}
                     resizeMode="contain"
                   />
                 </View>
               ),
               headerTitleAlign: 'center',
-              headerBackVisible: false,
-            }} />
-            <Stack.Screen name="Deals" component={DealsScreen} options={({ navigation }) => ({
-              title: 'Featured Deals',
-              headerRight: () => (
-                <Ionicons
-                  name="settings-outline"
-                  size={24}
-                  color="black"
-                  onPress={() => navigation.navigate('Settings')}
-                />
-              ),
               headerLeft: () => (
-                <Ionicons
-                  name="log-out-outline"
-                  size={24}
-                  color="black"
-                  onPress={() => navigation.navigate('Login')}
-                />
+                <Pressable onPress={() => navigation.navigate('Login')}>
+                  <Ionicons
+                    name="log-out-outline"
+                    size={28}
+                    color="black"
+                  />
+                </Pressable>
+              ),
+              headerRight: () => (
+                <Pressable onPress={() => navigation.navigate('Settings')}>
+                  <Ionicons
+                    name="settings-outline"
+                    size={24}
+                    color="black"
+                  />
+                </Pressable>
               ),
             })} />
+            <Stack.Screen name="Deals" component={DealsScreen}
+              options={({ navigation }) => ({
+                title: 'Featured Deals',
+                headerLeft: () => (
+                  <Pressable
+                    onPress={() => navigation.navigate('Home')}
+                  >
+                    <Ionicons name="arrow-back" size={24} color="black" />
+                  </Pressable>
+                ),
+              })}
+            />
             <Stack.Screen name="DealDetails" component={DealDetailsScreen} options={{ headerShown: false }} />
             <Stack.Screen name="RedeemDeal" component={RedeemDealScreen} options={{ headerShown: false }} />
             <Stack.Screen name="Settings" component={SettingsScreen} options={({ navigation }) => ({
@@ -95,21 +105,22 @@ const Hyperlink = ({ url, className = "", children }) => {
 const width = Dimensions.get('window').width;
 
 function HomeScreen({ navigation }) {
-  const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1713118353/apple-event.64d9fae8.jpeg_1_b9hug5.png"
+  const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
 
   return (
     <ScrollView className="pt-10 pb-[100] bg-white h-full">
       <TouchableOpacity onPress={() => { openLink("https://www.fenwaycdc.org/events/tasteofthefenway/") }} className="flex flex-col">
         <Image
-          className="rounded-md w-full h-[180]"
+          className="rounded-md mx-5"
           source={{ uri: top_ad }}
-          resizeMode='contain'
+          resizeMode="cover"
+          style={{ height: 180 }}
         />
       </TouchableOpacity>
-      <View className="pl-8 pt-4">
-        <View className="flex flex-row pr-8 justify-between">
-          <Text className="text-lg font-bold">Latest deals</Text>
-          <Pressable className="flex flex-row pt-1" onPress={() => navigation.navigate('Deals')}>
+      <View className="pl-5 pt-4">
+        <View className="flex flex-row pr-5 justify-between">
+          <Text className="text-xl font-bold">Latest deals</Text>
+          <Pressable className="flex flex-row pt-2" onPress={() => navigation.navigate('Deals')}>
             <Text className="text-blue-800 text-md">View all</Text>
           </Pressable>
         </View>
@@ -123,7 +134,7 @@ function HomeScreen({ navigation }) {
               <Image
                 source={{ uri: deal.imageUrl }}
                 style={{ height: 160, width: '100%', borderRadius: 8 }}
-                resizeMode='contain'
+                resizeMode='cover'
               />
               <View className="absolute bottom-8 pt-10 left-0 right-0 rounded-b-lg">
                 <LinearGradient
@@ -147,7 +158,7 @@ function HomeScreen({ navigation }) {
           ))}
         </ScrollView>
         <View className="flex flex-col gap-4 pr-8 pt-2 justify-between">
-          <Text className="text-lg font-bold pb-2">Get involved</Text>
+          <Text className="text-xl font-bold pb-2">Get involved</Text>
           <Hyperlink url="https://www.fenwaycdc.org/volunteer">
             Volunteer with us
           </Hyperlink>
@@ -157,8 +168,11 @@ function HomeScreen({ navigation }) {
           <Hyperlink url="https://www.fenwaycdc.org/events/">
             Upcoming events
           </Hyperlink>
-          <Hyperlink url="https://www.fenwaycdc.org/events/">
+          <Hyperlink url="https://www.fenwaycdc.org/supportus/support-fenway-businesses/">
             Support Fenway businesses
+          </Hyperlink>
+          <Hyperlink url="https://www.paypal.com/donate/?hosted_button_id=ZT3P8XW968RYL">
+            Donate to Fenway CDC
           </Hyperlink>
         </View>
       </View >
@@ -342,7 +356,7 @@ function DealDetailsScreen({ route, navigation }) {
           <Pressable
             className="absolute top-4 left-4 p-2 rounded-full"
             onPress={() => navigation.goBack()}
-            style={{ zIndex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+            style={{ zIndex: 2, backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
           >
             <Ionicons name="arrow-back" size={24} color="white" />
           </Pressable>
@@ -351,7 +365,7 @@ function DealDetailsScreen({ route, navigation }) {
         <View className="p-4">
           <Text className="text-3xl font-bold">{deal.name}</Text>
           <Text className="text-lg text-green-600 pb-1">{deal.discount}</Text>
-          {deal.expiry ?? <Text className="text-md text-gray-500 italic">Expires {deal.expiry}</Text>}
+          {deal.expiry && <Text className="text-md text-gray-500 italic">Expires {deal.expiry}</Text>}
           <Text className="text-md text-gray-700 py-4">
             Enjoy delicious meals at {deal.name} with this exclusive deal! Redeem your offer and save on your next visit.
           </Text>

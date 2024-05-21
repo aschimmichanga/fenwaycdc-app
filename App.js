@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { TouchableOpacity, ScrollView, FlatList, Image, Text, View, TextInput, Pressable, SafeAreaView, Linking, Alert, Dimensions } from "react-native"
@@ -8,6 +8,10 @@ import { SearchBar } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import LinearGradient from 'react-native-linear-gradient';
 import { deals } from './src/data';
+import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const width = Dimensions.get('window').width;
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -15,7 +19,7 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1 }}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Login">
+          <Stack.Navigator initialRouteName="AdminDashboard">
             <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login', headerBackVisible: false }} />
             <Stack.Screen name="Signup" component={SignUpScreen} options={{ title: 'Sign Up' }} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
@@ -72,7 +76,58 @@ export default function App() {
                 </Pressable>
               ),
             })} />
-            <Stack.Screen name="Admin" component={AdminScreen} options={{ title: 'Admin Dashboard' }} />
+            <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ title: 'Admin Login' }} />
+            <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={({ navigation }) => ({
+              title: 'Admin Dashboard', headerLeft: () => (
+                <Pressable onPress={() => navigation.navigate('Login')}>
+                  <Ionicons
+                    name="log-out-outline"
+                    size={28}
+                    color="black"
+                  />
+                </Pressable>
+              )
+            })} />
+            <Stack.Screen name="AddOrganization" component={AddOrganizationScreen} options={({ navigation }) => ({
+              title: 'Add Organization',
+              headerLeft: () => (
+                <Pressable
+                  onPress={() => navigation.navigate('AdminDashboard')}
+                >
+                  <Ionicons name="arrow-back" size={24} color="black" />
+                </Pressable>
+              ),
+            })} />
+            <Stack.Screen name="EditOrganization" component={EditOrganizationScreen} options={({ navigation }) => ({
+              title: 'Edit Organization',
+              headerLeft: () => (
+                <Pressable
+                  onPress={() => navigation.navigate('AdminDashboard')}
+                >
+                  <Ionicons name="arrow-back" size={24} color="black" />
+                </Pressable>
+              ),
+            })} />
+            <Stack.Screen name="CreateDeal" component={CreateDealScreen} options={({ navigation }) => ({
+              title: 'Create Deal',
+              headerLeft: () => (
+                <Pressable
+                  onPress={() => navigation.goBack()}
+                >
+                  <Ionicons name="arrow-back" size={24} color="black" />
+                </Pressable>
+              ),
+            })} />
+            <Stack.Screen name="EditDeal" component={EditDealScreen} options={({ navigation }) => ({
+              title: 'Edit Deal',
+              headerLeft: () => (
+                <Pressable
+                  onPress={() => navigation.goBack()}
+                >
+                  <Ionicons name="arrow-back" size={24} color="black" />
+                </Pressable>
+              ),
+            })} />
           </Stack.Navigator>
         </NavigationContainer>
       </SafeAreaView>
@@ -80,29 +135,345 @@ export default function App() {
   );
 }
 
-const openLink = (url) => {
-  Linking.canOpenURL(url).then(supported => {
-    if (supported) {
-      Linking.openURL(url);
-    } else {
-      console.log("Can't handle URL: " + url);
-    }
-  }).catch(err => console.error("An error occurred", err));
+function EditDealScreen({ route, navigation }) {
+  const discount = route.params?.discount ?? "";
+  const expiry = new Date(); // TODO: retrieve expiry for discount
+  const [deal, setDeal] = useState(discount)
+  const [date, setDate] = useState(expiry);
+  const [editMode, setEditMode] = useState(false);
+  return (
+    <View className="px-8 bg-white h-full flex justify-between">
+      <View className="flex flex-col pt-4">
+        <View className="flex flex-col pb-2">
+          <Text className="text-left justify-start pb-2">Deal Description</Text>
+          <View className="flex flex-row justify-between w-full pr-6">
+            <TextInput
+              className={`flex-1 ${!editMode && "bg-gray-100"} border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md`}
+              onChangeText={setDeal}
+              value={deal}
+              placeholder="Enter a sentence describing the deal here."
+              editable={editMode}
+            />
+            {editMode ? (
+              <TouchableOpacity className="pt-2 pl-2" onPress={() => setEditMode(false)}>
+                <Ionicons name="checkmark-outline" size={25} color="green" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity className="pt-2 pl-2" onPress={() => setEditMode(true)}>
+                <Ionicons name="create-outline" size={25} color="blue" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+        <View className="flex flex-row pt-4 ">
+          <Text className="text-lg">Set Expiry Date:</Text>
+          <DateTimePicker
+            testID="dateTimePicker"
+            value={date}
+            mode={"date"}
+            is24Hour={false}
+            display="default"
+            onChange={(event, selectedDate) => {
+              const currentDate = selectedDate || date;  // Fallback to current date if no date is selected
+              setDate(currentDate);
+            }}
+          />
+        </View>
+      </View>
+      <View className="flex flex-col gap-2">
+        <Pressable onPress={() => { navigation.goBack() }} className="bg-blue-800 rounded-lg shadow-sm">
+          <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
+        </Pressable>
+        <Pressable onPress={() => { }} className="border-2 border-red-200 bg-white rounded-lg shadow-sm">
+          <Text className="text-red-500 p-3 text-lg rounded-md text-center w-full">Delete</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
 }
 
-const Hyperlink = ({ url, className = "", children }) => {
-  const handlePress = () => {
-    openLink(url)
+function CreateDealScreen({ navigation }) {
+  const [deal, setDeal] = useState('')
+  const [date, setDate] = useState(new Date());
+
+  return (
+    <View className="pt-4 px-8 bg-white h-full flex justify-between">
+      <View className="flex flex-col gap-2 pb-6">
+        <Text className="text-left justify-start">Deal Description</Text>
+        <TextInput
+          className="border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md"
+          onChangeText={setDeal}
+          value={deal}
+          placeholder="Enter a sentence describing the deal here."
+        />
+        <View className="flex flex-row pt-4 ">
+          <Text className="text-lg">Set Expiry Date:</Text>
+          <DateTimePicker
+            testID="dateTimePicker"
+            value={date}
+            mode={"date"}
+            is24Hour={false}
+            display="default"
+            onChange={(event, selectedDate) => {
+              const currentDate = selectedDate || date;  // Fallback to current date if no date is selected
+              setDate(currentDate);
+            }}
+          />
+        </View>
+      </View>
+      <View className="flex flex-col gap-2">
+        <Pressable onPress={() => { navigation.goBack() }} className="bg-blue-800 rounded-lg shadow-sm">
+          <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
+        </Pressable>
+        <Pressable onPress={() => { }} className="border-2 border-red-200 bg-white rounded-lg shadow-sm">
+          <Text className="text-red-500 p-3 text-lg rounded-md text-center w-full">Delete</Text>
+        </Pressable>
+      </View>
+    </View>
+  )
+}
+
+function EditOrganizationScreen({ navigation, route }) {
+  const deal = route.params?.deal ?? {
+    id: '1',
+    name: 'Ichiban Yakitori House',
+    discounts: ['Buy 1 Get 1'],
+    expiry: 'Apr 3',
+    imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
+  };
+
+  const [organizationName, setOrganizationName] = useState(deal.name);
+  const [image, setImage] = useState(deal.imageUrl);
+  const [editMode, setEditMode] = useState(false);
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log(result);
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+
+  return (
+    <View className="pt-4 px-8 pb-[20] bg-white h-full flex-1 justify-between">
+      <ScrollView>
+        <Text className="text-lg font-bold pb-2">
+          Organization Banner
+        </Text>
+        <TouchableOpacity onPress={() => { pickImage() }} className="flex flex-col">
+          <Image
+            className="rounded-md mx-5"
+            source={{ uri: deal.imageUrl }}
+            resizeMode="cover"
+            style={{ height: 180 }}
+          />
+        </TouchableOpacity>
+        <View className="flex flex-col gap-2 py-6">
+          <Text className="text-left justify-start">Organization Name</Text>
+          <View className="flex flex-row justify-between w-full pr-6">
+            <TextInput
+              className={`flex-1 ${!editMode && "bg-gray-100"} border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md`}
+              onChangeText={setOrganizationName}
+              value={organizationName}
+              placeholder="Enter your organization name here."
+              editable={editMode}
+            />
+            {editMode ? (
+              <TouchableOpacity className="pt-2 pl-2" onPress={() => setEditMode(false)}>
+                <Ionicons name="checkmark-outline" size={25} color="green" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity className="pt-2 pl-2" onPress={() => setEditMode(true)}>
+                <Ionicons name="create-outline" size={25} color="blue" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+        {deal.discounts.length > 0 && (
+          <View>
+            <Text className="text-lg font-bold pb-2">Current Deals</Text>
+            <View className="rounded-t-lg max-h-[270]" style={{ borderWidth: 2, borderColor: '#EDEDED' }} >
+              <ScrollView className="flex pt-2">
+                {deal.discounts.map((discount, discountId) => (
+                  <Pressable
+                    key={discountId}
+                    onPress={() => { navigation.navigate('EditDeal', { discount, expiry: deal.expiry }) }}
+                    style={{ backgroundColor: "white", width: width * 0.75 }}
+                    className="bg-white w-3/4 h-auto p-2 pt-0">
+                    <View className="flex flex-row">
+                      <Image
+                        className="mt-1 rounded-lg"
+                        source={{ uri: deal.imageUrl }}
+                        style={{ height: 40, width: 40 }}
+                        resizeMode='cover'
+                      />
+                      <View className="flex flex-col pl-4">
+                        <Text className="font-bold text-lg">{organizationName}</Text>
+                        <Text className="text-blue-800 font-bold text-ellipsis overflow-hidden">{discount}</Text>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))
+                }
+              </ScrollView>
+            </View>
+          </View>
+        )
+        }
+        <Pressable onPress={() => { navigation.navigate("CreateDeal") }} className={`bg-white ${deal.discounts?.length > 0 ? "rounded-b-lg" : "rounded-lg"} shadow-sm`} style={{ borderWidth: 1, borderColor: '#EDEDED' }}>
+          <Text className={`text-gray-600 p-3 text-lg  text-center w-full`}>Create deal +</Text>
+        </Pressable>
+        <Pressable onPress={() => { }} className="mt-4 border-2 border-red-200 bg-white rounded-lg shadow-sm mb-10">
+          <Text className="text-red-500 p-3 text-lg rounded-md text-center w-full">Delete</Text>
+        </Pressable>
+      </ScrollView>
+      <Pressable onPress={() => { }} className="bg-blue-800 rounded-md shadow-sm">
+        <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
+      </Pressable>
+    </View >
+  )
+}
+
+function AddOrganizationScreen({ navigation }) {
+  const [organizationName, setOrganizationName] = useState('');
+  const [organizationDescription, setOrganizationDescription] = useState('');
+  const uploadPlaceholder = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1715907999/Screenshot_2024-05-16_at_9.06.27_PM_xsec9p.png"
+
+  const [image, setImage] = useState(null);
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log(result);
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
   };
 
   return (
-    <TouchableOpacity onPress={handlePress}>
-      <Text className={"text-blue-900 font-bold pl-4 pb-1 " + className}>{children}</Text>
-    </TouchableOpacity>
-  );
-};
+    <View className="pt-4 px-8 pb-[20] bg-white h-full flex-1 justify-between">
+      <View>
+        <Text className="text-lg font-bold pb-2">
+          Organization Banner
+        </Text>
+        <TouchableOpacity onPress={() => { pickImage() }} className="flex flex-col">
+          <Image
+            className="rounded-md mx-5"
+            source={{ uri: uploadPlaceholder }}
+            resizeMode="cover"
+            style={{ height: 180 }}
+          />
+        </TouchableOpacity>
+        <View className="flex flex-col gap-2 py-6">
+          <Text className="text-left justify-start">Organization Name</Text>
+          <TextInput
+            className="border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md"
+            onChangeText={setOrganizationName}
+            value={organizationName}
+            placeholder="Enter your organization name here."
+          />
+          <Text className="text-left justify-start">Organization Description</Text>
+          <TextInput
+            className="border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md"
+            onChangeText={setOrganizationDescription}
+            value={organizationDescription}
+            placeholder="Enter your organization description here."
+          />
+        </View>
+        <Text className="text-lg font-bold pb-2">Current Deals</Text>
+        <Pressable onPress={() => { navigation.navigate("CreateDeal") }} className="bg-white rounded-md shadow-sm" style={{ borderWidth: 1, borderColor: '#EDEDED', borderRadius: 8 }}>
+          <Text className="text-gray-600 p-3 text-lg rounded-md text-center w-full">Create deal +</Text>
+        </Pressable>
+      </View>
+      <Pressable onPress={() => { }} className="bg-blue-800 rounded-md shadow-sm">
+        <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
+      </Pressable>
+    </View>
+  )
+}
 
-const width = Dimensions.get('window').width;
+function AdminDashboardScreen({ navigation }) {
+  const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log(result);
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+  return (
+    <View className="pt-4 px-8 pb-[100] bg-white h-full">
+      <View className="flex flex-row justify-between pb-2">
+        <Text className="text-lg font-bold">
+          Current Organizations
+        </Text>
+      </View>
+      <View className="rounded-2xl" style={{ height: 270, borderWidth: 2, borderColor: '#EDEDED', borderRadius: 8 }} >
+        <ScrollView className="flex">
+          {deals.map((deal, index) => (
+            <Pressable
+              key={index}
+              onPress={() => { navigation.navigate('EditOrganization', { deal }) }}
+              style={{ backgroundColor: "white", width: width * 0.75 }}
+              className="bg-white w-3/4 h-auto p-2">
+              <View className="flex flex-row">
+                <Image
+                  source={{ uri: deal.imageUrl }}
+                  style={{ height: 50, width: 50, borderRadius: 18 }}
+                  resizeMode='cover'
+                />
+                <View className="flex flex-col pl-4">
+                  <Text className="font-bold text-lg">{deal.name}</Text>
+                  <Text className={(deal.discounts.length > 0) ? "text-blue-800" : "text-gray-500"}>{deal.discounts.length} promotion{(deal.discounts.length != 1) && "s"}</Text>
+                </View>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+      <Pressable onPress={() => { navigation.navigate('AddOrganization') }} className={"bg-blue-800 active:bg-blue-700 rounded-md mt-4"}>
+        <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Add Organization</Text>
+      </Pressable>
+      <View className="flex flex-row justify-between pt-4 pb-2">
+        <Text className="text-lg font-bold">
+          Current Banner
+        </Text>
+        <Pressable className="flex flex-row pt-2" onPress={pickImage}>
+          <Text className="text-blue-800 text-md font-semibold">Edit</Text>
+        </Pressable>
+      </View>
+      <Image
+        className="rounded-md"
+        source={{ uri: top_ad }}
+        resizeMode="cover"
+        style={{ height: 180 }}
+      />
+    </View >
+  )
+}
 
 function HomeScreen({ navigation }) {
   const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
@@ -126,36 +497,37 @@ function HomeScreen({ navigation }) {
         </View>
         <ScrollView horizontal className="flex gap-5 pt-2">
           {deals.slice(0, 5).map((deal, index) => (
-            <Pressable
-              key={index}
-              onPress={() => { navigation.navigate('DealDetails', { deal }) }}
-              style={{ backgroundColor: "black", width: width * 0.75, margin: 10, borderRadius: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}
-              className="bg-white w-3/4 h-auto rounded-lg shadow">
-              <Image
-                source={{ uri: deal.imageUrl }}
-                style={{ height: 160, width: '100%', borderRadius: 8 }}
-                resizeMode='cover'
-              />
-              <View className="absolute bottom-8 pt-10 left-0 right-0 rounded-b-lg">
-                <LinearGradient
-                  colors={['rgba(0, 0, 0, 0.25)', 'rgba(0, 0, 0, 0.7)']} // Correct format
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={{ height: 30, width: '100%' }}>
-                  <Text className="text-white text-lg font-bold px-3">
-                    {deal.name}
-                  </Text>
-                </LinearGradient>
-              </View>
-              <View className="absolute bottom-0 left-0 right-0 px-3 pt-2 bg-white rounded-b-lg">
-                <View className="flex flex-row justify-between items-start pb-2">
-                  <View>
-                    <Text className="text-md font-semibold">{deal.discount}</Text>
+            deal.discounts.map((discount, discountId) => (
+              <Pressable
+                key={index}
+                onPress={() => { navigation.navigate('DealDetails', { deal, discountId }) }}
+                style={{ backgroundColor: "black", width: width * 0.75, margin: 10, borderRadius: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 }}
+                className="bg-white w-3/4 h-auto rounded-lg shadow">
+                <Image
+                  source={{ uri: deal.imageUrl }}
+                  style={{ height: 160, width: '100%', borderRadius: 8 }}
+                  resizeMode='cover'
+                />
+                <View className="absolute bottom-8 pt-10 left-0 right-0 rounded-b-lg">
+                  <LinearGradient
+                    colors={['rgba(0, 0, 0, 0.25)', 'rgba(0, 0, 0, 0.7)']} // Correct format
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{ height: 30, width: '100%' }}>
+                    <Text className="text-white text-lg font-bold px-3">
+                      {deal.name}
+                    </Text>
+                  </LinearGradient>
+                </View>
+                <View className="absolute bottom-0 left-0 right-0 px-3 pt-2 bg-white rounded-b-lg">
+                  <View className="flex flex-row justify-between items-start pb-2">
+                    <View>
+                      <Text className="text-md font-semibold">{discount}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            ))))}
         </ScrollView>
         <View className="flex flex-col gap-4 pr-8 pt-2 justify-between">
           <Text className="text-xl font-bold pb-2">Get involved</Text>
@@ -180,14 +552,13 @@ function HomeScreen({ navigation }) {
   )
 }
 
-function AdminScreen({ navigation }) {
+function AdminLoginScreen({ navigation }) {
   const [pin, setPin] = useState('');
   const correctPin = '1234';  // This should ideally be stored and managed more securely
 
   const handleUnlock = () => {
     if (pin === correctPin) {
-      Alert.alert("Access Granted", "Welcome to the Admin Dashboard!");
-      // Here you can navigate to actual admin features or unlock them
+      navigation.navigate('AdminDashboard')
     } else {
       Alert.alert("Access Denied", "Incorrect PIN entered.");
       setPin('');  // Reset PIN on failure
@@ -195,35 +566,20 @@ function AdminScreen({ navigation }) {
   };
 
   return (
-    <View className="flex-1 p-4 bg-gray-100 justify-center items-center">
-      <Text className="text-lg font-bold mb-4">Enter Admin PIN</Text>
-      <TextInput
-        style={{
-          height: 40,
-          width: '80%',
-          borderColor: 'gray',
-          borderWidth: 1,
-          marginBottom: 20,
-          textAlign: 'center',
-          fontSize: 18,
-        }}
-        keyboardType="numeric"
-        secureTextEntry
-        maxLength={4}  // Assuming PIN is 4 digits
-        onChangeText={setPin}
-        value={pin}
-        placeholder="Enter PIN"
-      />
-      <Pressable
-        onPress={handleUnlock}
-        style={{
-          backgroundColor: '#007bff',
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          borderRadius: 5,
-        }}
-      >
-        <Text style={{ color: 'white', fontSize: 16 }}>Unlock</Text>
+    <View className="flex-1 py-[24] px-[36]">
+      <View className="flex flex-col gap-2 pb-6 w-full">
+        <Text className={"text-left justify-start"}>Pin</Text>
+        <TextInput
+          className="border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md mb-"
+          onChangeText={setPin}
+          value={pin}
+          placeholder="Enter your pin here."
+          autoComplete="current-password"
+          secureTextEntry={true}
+        />
+      </View>
+      <Pressable onPress={() => { handleUnlock() }} className={"bg-blue-800 active:bg-blue-700 rounded-md"}>
+        <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Continue</Text>
       </Pressable>
     </View>
   );
@@ -340,13 +696,15 @@ function DealDetailsScreen({ route, navigation }) {
   const deal = route.params?.deal ?? {
     id: '1',
     name: 'Ichiban Yakitori House',
-    discount: 'Buy 1 Get 1',
+    discounts: ['Buy 1 Get 1'],
     expiry: 'Apr 3',
     imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
   };
 
+  const discountId = route.params?.discountId ?? 0
+
   return (
-    <View className="flex flex-col justify-between h-full bg-gray-100">
+    <View className="flex flex-col justify-between h-full bg-gray-100" >
       <ScrollView className="flex-1">
         <View>
           <Image
@@ -364,7 +722,7 @@ function DealDetailsScreen({ route, navigation }) {
 
         <View className="p-4">
           <Text className="text-3xl font-bold">{deal.name}</Text>
-          <Text className="text-lg text-green-600 pb-1">{deal.discount}</Text>
+          <Text className="text-lg text-green-600 pb-1">{deal.discounts[discountId]}</Text>
           {deal.expiry && <Text className="text-md text-gray-500 italic">Expires {deal.expiry}</Text>}
           <Text className="text-md text-gray-700 py-4">
             Enjoy delicious meals at {deal.name} with this exclusive deal! Redeem your offer and save on your next visit.
@@ -376,7 +734,7 @@ function DealDetailsScreen({ route, navigation }) {
           <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Redeem Now</Text>
         </Pressable>
       </View>
-    </View>
+    </View >
   );
 }
 
@@ -555,7 +913,7 @@ function LoginScreen({ navigation }) {
 
     if (newTapCount === 15) {
       setTapCount(0);
-      navigation.navigate('Admin');
+      navigation.navigate("AdminLogin");
     }
   };
 
@@ -598,3 +956,25 @@ function LoginScreen({ navigation }) {
     </View>
   );
 }
+
+const openLink = (url) => {
+  Linking.canOpenURL(url).then(supported => {
+    if (supported) {
+      Linking.openURL(url);
+    } else {
+      console.log("Can't handle URL: " + url);
+    }
+  }).catch(err => console.error("An error occurred", err));
+}
+
+const Hyperlink = ({ url, className = "", children }) => {
+  const handlePress = () => {
+    openLink(url)
+  };
+
+  return (
+    <TouchableOpacity onPress={handlePress}>
+      <Text className={"text-blue-900 font-bold pl-4 pb-1 " + className}>{children}</Text>
+    </TouchableOpacity>
+  );
+};

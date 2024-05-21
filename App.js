@@ -57,9 +57,7 @@ export default function App() {
               options={({ navigation }) => ({
                 title: 'Featured Deals',
                 headerLeft: () => (
-                  <Pressable
-                    onPress={() => navigation.navigate('Home')}
-                  >
+                  <Pressable onPress={() => navigation.navigate('Home')}>
                     <Ionicons name="arrow-back" size={24} color="black" />
                   </Pressable>
                 ),
@@ -91,9 +89,7 @@ export default function App() {
             <Stack.Screen name="AddOrganization" component={AddOrganizationScreen} options={({ navigation }) => ({
               title: 'Add Organization',
               headerLeft: () => (
-                <Pressable
-                  onPress={() => navigation.navigate('AdminDashboard')}
-                >
+                <Pressable onPress={() => navigation.navigate('AdminDashboard')}>
                   <Ionicons name="arrow-back" size={24} color="black" />
                 </Pressable>
               ),
@@ -101,9 +97,7 @@ export default function App() {
             <Stack.Screen name="EditOrganization" component={EditOrganizationScreen} options={({ navigation }) => ({
               title: 'Edit Organization',
               headerLeft: () => (
-                <Pressable
-                  onPress={() => navigation.navigate('AdminDashboard')}
-                >
+                <Pressable onPress={() => navigation.navigate('AdminDashboard')}>
                   <Ionicons name="arrow-back" size={24} color="black" />
                 </Pressable>
               ),
@@ -111,9 +105,7 @@ export default function App() {
             <Stack.Screen name="CreateDeal" component={CreateDealScreen} options={({ navigation }) => ({
               title: 'Create Deal',
               headerLeft: () => (
-                <Pressable
-                  onPress={() => navigation.goBack()}
-                >
+                <Pressable onPress={() => navigation.goBack()}>
                   <Ionicons name="arrow-back" size={24} color="black" />
                 </Pressable>
               ),
@@ -121,9 +113,7 @@ export default function App() {
             <Stack.Screen name="EditDeal" component={EditDealScreen} options={({ navigation }) => ({
               title: 'Edit Deal',
               headerLeft: () => (
-                <Pressable
-                  onPress={() => navigation.goBack()}
-                >
+                <Pressable onPress={() => navigation.goBack()}>
                   <Ionicons name="arrow-back" size={24} color="black" />
                 </Pressable>
               ),
@@ -137,7 +127,7 @@ export default function App() {
 
 function EditDealScreen({ route, navigation }) {
   const discount = route.params?.discount ?? "";
-  const expiry = new Date(); // TODO: retrieve expiry for discount
+  const expiry = route.params?.expiry ?? new Date();
   const [deal, setDeal] = useState(discount)
   const [date, setDate] = useState(expiry);
   const [editMode, setEditMode] = useState(false);
@@ -237,8 +227,7 @@ function EditOrganizationScreen({ navigation, route }) {
   const deal = route.params?.deal ?? {
     id: '1',
     name: 'Ichiban Yakitori House',
-    discounts: ['Buy 1 Get 1'],
-    expiry: 'Apr 3',
+    discounts: [('Buy 1 Get 1', "Apr 3")],
     imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
   };
 
@@ -305,7 +294,7 @@ function EditOrganizationScreen({ navigation, route }) {
                 {deal.discounts.map((discount, discountId) => (
                   <Pressable
                     key={discountId}
-                    onPress={() => { navigation.navigate('EditDeal', { discount, expiry: deal.expiry }) }}
+                    onPress={() => { navigation.navigate('EditDeal', { discount: discount[0], expiry: discount[1] }) }}
                     style={{ backgroundColor: "white", width: width * 0.75 }}
                     className="bg-white w-3/4 h-auto p-2 pt-0">
                     <View className="flex flex-row">
@@ -317,7 +306,7 @@ function EditOrganizationScreen({ navigation, route }) {
                       />
                       <View className="flex flex-col pl-4">
                         <Text className="font-bold text-lg">{organizationName}</Text>
-                        <Text className="text-blue-800 font-bold text-ellipsis overflow-hidden">{discount}</Text>
+                        <Text className="text-blue-800 font-bold text-ellipsis overflow-hidden">{discount[0]}</Text>
                       </View>
                     </View>
                   </Pressable>
@@ -696,8 +685,7 @@ function DealDetailsScreen({ route, navigation }) {
   const deal = route.params?.deal ?? {
     id: '1',
     name: 'Ichiban Yakitori House',
-    discounts: ['Buy 1 Get 1'],
-    expiry: 'Apr 3',
+    discounts: [('Buy 1 Get 1', 'Apr 3')],
     imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
   };
 
@@ -722,8 +710,8 @@ function DealDetailsScreen({ route, navigation }) {
 
         <View className="p-4">
           <Text className="text-3xl font-bold">{deal.name}</Text>
-          <Text className="text-lg text-green-600 pb-1">{deal.discounts[discountId]}</Text>
-          {deal.expiry && <Text className="text-md text-gray-500 italic">Expires {deal.expiry}</Text>}
+          <Text className="text-lg text-green-600 pb-1">{deal.discounts[discountId][0]}</Text>
+          {deal.discounts[discountId][1] && <Text className="text-md text-gray-500 italic">Expires {deal.discounts[discountId][1].toString()}</Text>}
           <Text className="text-md text-gray-700 py-4">
             Enjoy delicious meals at {deal.name} with this exclusive deal! Redeem your offer and save on your next visit.
           </Text>

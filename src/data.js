@@ -14,65 +14,56 @@ export const deals = [
     {
         id: 1,
         name: 'Tenderoni\'s',
-        discounts: ['Free Fries with purchase of $10+', '20% off any meal', "Buy one get one free", "25% off your next order", "50% off a side of fries"],
-        expiry: 'Apr 4',
+        discounts: [('Free Fries with purchase of $10+', new Date(2025, 4, 4)), ('20% off any meal', new Date(2025, 4, 4)), ("Buy one get one free", new Date(2025, 4, 4)), ("25% off your next order", new Date(2025, 4, 4)), ("50% off a side of fries", new Date(2025, 4, 4))],
         imageUrl: categoriesImages.pizza
     },
     {
         id: 2,
         name: 'Economy True Value',
-        discounts: ['10% discount'],
-        expiry: '',
+        discounts: [('10% discount', null)],
         imageUrl: categoriesImages.hardware
     },
     {
         id: 3,
         name: 'Fern Flowers',
-        discounts: ['10% discount'],
-        expiry: '',
+        discounts: [('10% discount', null)],
         imageUrl: categoriesImages.flowers
     },
     {
         id: 4,
         name: 'El Pelon Taqueria',
-        discounts: ["A free 'Mountain Dew' drink with $10 purchase"],
-        expiry: '',
+        discounts: [("A free 'Mountain Dew' drink with $10 purchase", null)],
         imageUrl: categoriesImages.mexican
     },
     {
         id: 5,
         name: 'Saloniki Greek',
-        discounts: ["Enjoy free fries with purchase of $10+"],
-        expiry: '',
+        discounts: [("Enjoy free fries with purchase of $10+", null)],
         details: 'This offer is only valid at the Fenway location',
         imageUrl: categoriesImages.greek
     },
     {
         id: 6,
         name: 'Basho Japanese Brasserie',
-        discounts: ['10% off any catering order of $100+'],
-        expiry: 'Apr 3',
+        discounts: [('10% off any catering order of $100+', null)],
         imageUrl: categoriesImages.sushi
     },
     {
         id: 7,
         name: 'Huntington Theater',
-        discounts: ["$20 tickets"],
-        expiry: '',
+        discounts: [("$20 tickets", null)],
         imageUrl: categoriesImages.theater
     },
     {
         id: 8,
         name: 'YMCA Huntington',
-        discounts: ["10% off YMCA membership"],
-        expiry: '',
+        discounts: [("10% off YMCA membership", null)],
         imageUrl: categoriesImages.gym
     },
     {
         id: 9,
         name: 'Boston Red Sox',
-        discounts: ["Free tickets for Neighborhood Night Red Sox games, movie nights, and other events"],
+        discounts: [("Free tickets for Neighborhood Night Red Sox games, movie nights, and other events", null)],
         details: "Giveaways are organized for members by the Fenway CDC team when tickets are available",
-        expiry: '',
         imageUrl: categoriesImages.red_socks
     },];

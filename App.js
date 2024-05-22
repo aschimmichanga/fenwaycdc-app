@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { TouchableOpacity, ScrollView, FlatList, Image, Text, View, TextInput, Pressable, SafeAreaView, Linking, Alert, Dimensions } from "react-native"
+import { TouchableOpacity, ScrollView, FlatList, Image, Text, View, TextInput, Pressable, SafeAreaView, Linking, Alert, Dimensions } from "react-native";
 import Logo from './src/assets/logo.png';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SearchBar } from '@rneui/themed';
@@ -10,9 +10,15 @@ import LinearGradient from 'react-native-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { login, signup } from './src/AuthenticationService';
-import { getDeals } from './src/DealService';
+import { getDeals, createDeal, updateDeal, createDiscount } from './src/DealService';
+import axios from 'axios';
+import { updateDiscount } from './src/DiscountService';
+import { v4 as uuidv4 } from 'uuid';
 
 const width = Dimensions.get('window').width;
+
+const userId = 'USER_ID';
+const userToken = 'USER_JWT_TOKEN';
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -103,16 +109,16 @@ export default function App() {
                 </Pressable>
               ),
             })} />
-            <Stack.Screen name="CreateDeal" component={CreateDealScreen} options={({ navigation }) => ({
-              title: 'Create Deal',
+            <Stack.Screen name="CreateDiscount" component={CreateDiscountScreen} options={({ navigation }) => ({
+              title: 'Create Discount',
               headerLeft: () => (
                 <Pressable onPress={() => navigation.goBack()}>
                   <Ionicons name="arrow-back" size={24} color="black" />
                 </Pressable>
               ),
             })} />
-            <Stack.Screen name="EditDeal" component={EditDealScreen} options={({ navigation }) => ({
-              title: 'Edit Deal',
+            <Stack.Screen name="EditDiscount" component={EditDiscountScreen} options={({ navigation }) => ({
+              title: 'Edit Discount',
               headerLeft: () => (
                 <Pressable onPress={() => navigation.goBack()}>
                   <Ionicons name="arrow-back" size={24} color="black" />
@@ -126,46 +132,46 @@ export default function App() {
   );
 }
 
-function EditDealScreen({ route, navigation }) {
-  const id = route.params?.id ?? "";
+function EditDiscountScreen({ route, navigation }) {
+  const id = route.params?.id;
   const discount = route.params?.discount ?? "";
-  const expiry = route.params?.expiry ?? new Date();
-  const [deal, setDeal] = useState(discount)
+  const expiry = route.params?.expiry ? new Date(route.params.expiry) : new Date();
+
+  const [deal, setDeal] = useState(discount);
   const [date, setDate] = useState(expiry);
   const [editMode, setEditMode] = useState(false);
 
   const handleSave = async () => {
     try {
-      await axios.put(`https://your-api-url.com/deals/${id}`, { discount: deal, expiry: date });
-      Alert.alert('Success', 'Deal updated successfully');
+      updateDiscount(id, { discount: deal, expiry: date });
       navigation.goBack();
     } catch (error) {
+      console.error(error);
       Alert.alert('Error', error.message);
     }
   };
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`https://your-api-url.com/deals/${id}`);
-      Alert.alert('Success', 'Deal deleted successfully');
+      deleteDiscount(id);
       navigation.goBack();
     } catch (error) {
+      console.error(error);
       Alert.alert('Error', error.message);
     }
   };
-
 
   return (
     <View className="px-8 bg-white h-full flex justify-between">
       <View className="flex flex-col pt-4">
         <View className="flex flex-col pb-2">
-          <Text className="text-left justify-start pb-2">Deal Description</Text>
+          <Text className="text-left justify-start pb-2">Discount Description</Text>
           <View className="flex flex-row justify-between w-full pr-6">
             <TextInput
               className={`flex-1 ${!editMode && "bg-gray-100"} border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md`}
               onChangeText={setDeal}
               value={deal}
-              placeholder="Enter a sentence describing the deal here."
+              placeholder="Enter a sentence describing the discount here."
               editable={editMode}
             />
             {editMode ? (
@@ -188,37 +194,42 @@ function EditDealScreen({ route, navigation }) {
             is24Hour={false}
             display="default"
             onChange={(event, selectedDate) => {
-              const currentDate = selectedDate || date;  // Fallback to current date if no date is selected
+              const currentDate = selectedDate || date;
               setDate(currentDate);
             }}
           />
         </View>
       </View>
       <View className="flex flex-col gap-2">
-        <Pressable onPress={() => { navigation.goBack() }} className="bg-blue-800 rounded-lg shadow-sm">
+        <Pressable onPress={handleSave} className="bg-blue-800 rounded-lg shadow-sm">
           <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
         </Pressable>
-        <Pressable onPress={() => { }} className="border-2 border-red-200 bg-white rounded-lg shadow-sm">
+        <Pressable onPress={handleDelete} className="border-2 border-red-200 bg-white rounded-lg shadow-sm">
           <Text className="text-red-500 p-3 text-lg rounded-md text-center w-full">Delete</Text>
         </Pressable>
       </View>
     </View>
-  )
+  );
 }
 
-function CreateDealScreen({ navigation }) {
+function CreateDiscountScreen({ navigation }) {
   const [deal, setDeal] = useState('')
   const [date, setDate] = useState(new Date());
+
+  const handleSave = async () => {
+    await createDiscount({ discount: deal, expiry: date });
+    navigation.goBack();
+  };
 
   return (
     <View className="pt-4 px-8 bg-white h-full flex justify-between">
       <View className="flex flex-col gap-2 pb-6">
-        <Text className="text-left justify-start">Deal Description</Text>
+        <Text className="text-left justify-start">Discount Description</Text>
         <TextInput
           className="border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md"
           onChangeText={setDeal}
           value={deal}
-          placeholder="Enter a sentence describing the deal here."
+          placeholder="Enter a sentence describing the discount here."
         />
         <View className="flex flex-row pt-4 ">
           <Text className="text-lg">Set Expiry Date:</Text>
@@ -236,10 +247,10 @@ function CreateDealScreen({ navigation }) {
         </View>
       </View>
       <View className="flex flex-col gap-2">
-        <Pressable onPress={() => { navigation.goBack() }} className="bg-blue-800 rounded-lg shadow-sm">
+        <Pressable onPress={handleSave} className="bg-blue-800 rounded-lg shadow-sm">
           <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
         </Pressable>
-        <Pressable onPress={() => { }} className="border-2 border-red-200 bg-white rounded-lg shadow-sm">
+        <Pressable onPress={() => { navigation.goBack() }} className="border-2 border-red-200 bg-white rounded-lg shadow-sm">
           <Text className="text-red-500 p-3 text-lg rounded-md text-center w-full">Delete</Text>
         </Pressable>
       </View>
@@ -248,18 +259,14 @@ function CreateDealScreen({ navigation }) {
 }
 
 function EditOrganizationScreen({ navigation, route }) {
-  const deal = route.params?.deal ?? {
-    id: '1',
-    name: 'Ichiban Yakitori House',
-    discounts: [{ description: 'Buy 1 Get 1', expiry: new Date(2025, 4, 3) }],
-    imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
-  };
+  const organizationId = route.params?.id;
+  const deal = route.params?.deal;
 
-  const [organizationName, setOrganizationName] = useState(deal.name);
-  const [image, setImage] = useState(deal.imageUrl);
+  const [organization, setOrganization] = useState(deal);
+
   const [editMode, setEditMode] = useState(false);
+
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
@@ -267,24 +274,32 @@ function EditOrganizationScreen({ navigation, route }) {
       quality: 1,
     });
 
-    console.log(result);
-
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      setOrganization({ ...organization, imageUrl: result.assets[0].uri });
     }
   };
 
+  const saveOrganization = async () => {
+    try {
+      if (organizationId) {
+        await updateDeal(organizationId, organization)
+      } else {
+        await createDeal(organization)
+      }
+      navigation.goBack();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <View className="pt-4 px-8 pb-[20] bg-white h-full flex-1 justify-between">
       <ScrollView>
-        <Text className="text-lg font-bold pb-2">
-          Organization Banner
-        </Text>
-        <TouchableOpacity onPress={() => { pickImage() }} className="flex flex-col">
+        <Text className="text-lg font-bold pb-2">Organization Banner</Text>
+        <TouchableOpacity onPress={pickImage} className="flex flex-col">
           <Image
             className="rounded-md mx-5"
-            source={{ uri: deal.imageUrl }}
+            source={{ uri: organization.imageUrl }}
             resizeMode="cover"
             style={{ height: 180 }}
           />
@@ -294,8 +309,8 @@ function EditOrganizationScreen({ navigation, route }) {
           <View className="flex flex-row justify-between w-full pr-6">
             <TextInput
               className={`flex-1 ${!editMode && "bg-gray-100"} border-2 border-gray-300 focus:border-blue-700 p-3 rounded-md`}
-              onChangeText={setOrganizationName}
-              value={organizationName}
+              onChangeText={name => setOrganization({ ...organization, name })}
+              value={organization.name}
               placeholder="Enter your organization name here."
               editable={editMode}
             />
@@ -310,16 +325,16 @@ function EditOrganizationScreen({ navigation, route }) {
             )}
           </View>
         </View>
-        {deal.discounts.length > 0 && (
+        {organization.deals.length > 0 && (
           <View>
             <Text className="text-lg font-bold pb-2">Current Deals</Text>
-            <View className="rounded-t-lg max-h-[270]" style={{ borderWidth: 2, borderColor: '#EDEDED' }} >
+            <View className="rounded-t-lg max-h-[270]" style={{ borderWidth: 2, borderColor: '#EDEDED' }}>
               <ScrollView className="flex pt-2">
-                {deal.discounts.map((discount, discountId) => (
+                {organization.deals.map((deal, dealId) => (
                   <Pressable
-                    key={discountId}
-                    onPress={() => { navigation.navigate('EditDeal', { id: discount._id, discount: discount[0], expiry: discount[1] }) }}
-                    style={{ backgroundColor: "white", width: width * 0.75 }}
+                    key={dealId}
+                    onPress={() => navigation.navigate('EditDiscount', { id: deal._id, deal })}
+                    style={{ backgroundColor: "white", width: '75%' }}
                     className="bg-white w-3/4 h-auto p-2 pt-0">
                     <View className="flex flex-row">
                       <Image
@@ -329,41 +344,37 @@ function EditOrganizationScreen({ navigation, route }) {
                         resizeMode='cover'
                       />
                       <View className="flex flex-col pl-4">
-                        <Text className="font-bold text-lg">{organizationName}</Text>
-                        <Text className="text-blue-800 font-bold text-ellipsis overflow-hidden">{discount[0]}</Text>
+                        <Text className="font-bold text-lg">{deal.name}</Text>
+                        <Text className="text-blue-800 font-bold">{deal.details}</Text>
                       </View>
                     </View>
                   </Pressable>
-                ))
-                }
+                ))}
               </ScrollView>
             </View>
           </View>
-        )
-        }
-        <Pressable onPress={() => { navigation.navigate("CreateDeal") }} className={`bg-white ${deal.discounts?.length > 0 ? "rounded-b-lg" : "rounded-lg"} shadow-sm`} style={{ borderWidth: 1, borderColor: '#EDEDED' }}>
-          <Text className={`text-gray-600 p-3 text-lg  text-center w-full`}>Create deal +</Text>
+        )}
+        <Pressable onPress={() => navigation.navigate("CreateDiscount")} className={`bg-white ${organization.deals.length > 0 ? "rounded-b-lg" : "rounded-lg"} shadow-sm`} style={{ borderWidth: 1, borderColor: '#EDEDED' }}>
+          <Text className="text-gray-600 p-3 text-lg text-center w-full">Create deal +</Text>
         </Pressable>
-        <Pressable onPress={() => { }} className="mt-4 border-2 border-red-200 bg-white rounded-lg shadow-sm mb-10">
+        <Pressable onPress={() => { navigation.goBack() }} className="mt-4 border-2 border-red-200 bg-white rounded-lg shadow-sm mb-10">
           <Text className="text-red-500 p-3 text-lg rounded-md text-center w-full">Delete</Text>
         </Pressable>
       </ScrollView>
-      <Pressable onPress={() => { }} className="bg-blue-800 rounded-md shadow-sm">
+      <Pressable onPress={saveOrganization} className="bg-blue-800 rounded-md shadow-sm">
         <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
       </Pressable>
-    </View >
-  )
+    </View>
+  );
 }
 
 function AddOrganizationScreen({ navigation }) {
   const [organizationName, setOrganizationName] = useState('');
   const [organizationDescription, setOrganizationDescription] = useState('');
   const uploadPlaceholder = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1715907999/Screenshot_2024-05-16_at_9.06.27_PM_xsec9p.png"
-
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState(uploadPlaceholder);
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
@@ -371,10 +382,48 @@ function AddOrganizationScreen({ navigation }) {
       quality: 1,
     });
 
-    console.log(result);
-
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      name: `${uuidv4()}_organization_banner.jpg`,
+      type: 'image/jpeg'
+    });
+    formData.append('upload_preset', 'ml_default');
+
+    try {
+      const response = await axios.post(process.env.CLOUDINARY_URL, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data.url;
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      return null;
+    }
+  };
+
+  const saveOrganization = async () => {
+    try {
+      let imageUrl = image;
+      if (image !== uploadPlaceholder) {
+        imageUrl = await uploadImage(image);
+      }
+
+      createDeal({
+        name: organizationName,
+        details: organizationDescription,
+        imageUrl: imageUrl,
+      })
+      navigation.goBack();
+    } catch (error) {
+      console.error('Failed to save organization:', error);
     }
   };
 
@@ -384,10 +433,10 @@ function AddOrganizationScreen({ navigation }) {
         <Text className="text-lg font-bold pb-2">
           Organization Banner
         </Text>
-        <TouchableOpacity onPress={() => { pickImage() }} className="flex flex-col">
+        <TouchableOpacity onPress={pickImage} className="flex flex-col">
           <Image
             className="rounded-md mx-5"
-            source={{ uri: uploadPlaceholder }}
+            source={{ uri: image }}
             resizeMode="cover"
             style={{ height: 180 }}
           />
@@ -409,11 +458,11 @@ function AddOrganizationScreen({ navigation }) {
           />
         </View>
         <Text className="text-lg font-bold pb-2">Current Deals</Text>
-        <Pressable onPress={() => { navigation.navigate("CreateDeal") }} className="bg-white rounded-md shadow-sm" style={{ borderWidth: 1, borderColor: '#EDEDED', borderRadius: 8 }}>
+        <Pressable onPress={() => navigation.navigate("CreateDiscount")} className="bg-white rounded-md shadow-sm" style={{ borderWidth: 1, borderColor: '#EDEDED', borderRadius: 8 }}>
           <Text className="text-gray-600 p-3 text-lg rounded-md text-center w-full">Create deal +</Text>
         </Pressable>
       </View>
-      <Pressable onPress={() => { }} className="bg-blue-800 rounded-md shadow-sm">
+      <Pressable onPress={saveOrganization} className="bg-blue-800 rounded-md shadow-sm">
         <Text className="text-white p-3 text-lg rounded-md text-center w-full">Save</Text>
       </Pressable>
     </View>
@@ -464,7 +513,7 @@ function AdminDashboardScreen({ navigation }) {
           {deals.map((deal, index) => (
             <Pressable
               key={index}
-              onPress={() => { navigation.navigate('EditOrganization', { deal }) }}
+              onPress={() => { navigation.navigate('EditOrganization', { id: deal._id, deal }) }}
               style={{ backgroundColor: "white", width: width * 0.75 }}
               className="bg-white w-3/4 h-auto p-2">
               <View className="flex flex-row">
@@ -627,16 +676,22 @@ function AdminLoginScreen({ navigation }) {
   );
 }
 
-
 function SettingsScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSave = () => {
-    // Here, you would normally update the user's settings via an API call
-    Alert.alert('Success', 'Your settings have been updated.');
-
+  const handleSave = async () => {
+    try {
+      await axios.put(`/users/${userId}`, { name, email, password }, {
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
+      Alert.alert('Success', 'Your settings have been updated.');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update settings.');
+    }
   };
 
   return (

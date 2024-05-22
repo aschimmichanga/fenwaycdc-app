@@ -7,9 +7,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SearchBar } from '@rneui/themed';
 import { Ionicons } from '@expo/vector-icons';
 import LinearGradient from 'react-native-linear-gradient';
-import { deals } from './src/data';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { login, signup } from './src/AuthenticationService';
+import { getDeals } from './src/DealService';
 
 const width = Dimensions.get('window').width;
 
@@ -126,11 +127,34 @@ export default function App() {
 }
 
 function EditDealScreen({ route, navigation }) {
+  const id = route.params?.id ?? "";
   const discount = route.params?.discount ?? "";
   const expiry = route.params?.expiry ?? new Date();
   const [deal, setDeal] = useState(discount)
   const [date, setDate] = useState(expiry);
   const [editMode, setEditMode] = useState(false);
+
+  const handleSave = async () => {
+    try {
+      await axios.put(`https://your-api-url.com/deals/${id}`, { discount: deal, expiry: date });
+      Alert.alert('Success', 'Deal updated successfully');
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`https://your-api-url.com/deals/${id}`);
+      Alert.alert('Success', 'Deal deleted successfully');
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
+  };
+
+
   return (
     <View className="px-8 bg-white h-full flex justify-between">
       <View className="flex flex-col pt-4">
@@ -227,7 +251,7 @@ function EditOrganizationScreen({ navigation, route }) {
   const deal = route.params?.deal ?? {
     id: '1',
     name: 'Ichiban Yakitori House',
-    discounts: [('Buy 1 Get 1', "Apr 3")],
+    discounts: [{ description: 'Buy 1 Get 1', expiry: new Date(2025, 4, 3) }],
     imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
   };
 
@@ -294,7 +318,7 @@ function EditOrganizationScreen({ navigation, route }) {
                 {deal.discounts.map((discount, discountId) => (
                   <Pressable
                     key={discountId}
-                    onPress={() => { navigation.navigate('EditDeal', { discount: discount[0], expiry: discount[1] }) }}
+                    onPress={() => { navigation.navigate('EditDeal', { id: discount._id, discount: discount[0], expiry: discount[1] }) }}
                     style={{ backgroundColor: "white", width: width * 0.75 }}
                     className="bg-white w-3/4 h-auto p-2 pt-0">
                     <View className="flex flex-row">
@@ -398,6 +422,21 @@ function AddOrganizationScreen({ navigation }) {
 
 function AdminDashboardScreen({ navigation }) {
   const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
+  const [deals, setDeals] = useState([]);
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const data = await getDeals();
+        setDeals(data);
+      } catch (error) {
+        Alert.alert('Error', error.message);
+      }
+    };
+
+    fetchDeals();
+  }, []);
+
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -466,6 +505,20 @@ function AdminDashboardScreen({ navigation }) {
 
 function HomeScreen({ navigation }) {
   const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
+  const [deals, setDeals] = useState([]);
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const data = await getDeals();
+        setDeals(data);
+      } catch (error) {
+        Alert.alert('Error', error.message);
+      }
+    };
+
+    fetchDeals();
+  }, []);
 
   return (
     <ScrollView className="pt-10 pb-[100] bg-white h-full">
@@ -685,7 +738,7 @@ function DealDetailsScreen({ route, navigation }) {
   const deal = route.params?.deal ?? {
     id: '1',
     name: 'Ichiban Yakitori House',
-    discounts: [('Buy 1 Get 1', 'Apr 3')],
+    discounts: [{ description: 'Buy 1 Get 1', expiry: new Date(2025, 4, 3) }],
     imageUrl: 'https://res.cloudinary.com/dguy8o0uf/image/upload/v1713049742/sushi_jvq1fd.jpg'
   };
 
@@ -728,6 +781,21 @@ function DealDetailsScreen({ route, navigation }) {
 
 function DealsScreen({ navigation }) {
   const [search, setSearch] = useState("");
+  const [deals, setDeals] = useState([]);
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const data = await getDeals();
+        setDeals(data);
+      } catch (error) {
+        Alert.alert('Error', error.message);
+      }
+    };
+
+    fetchDeals();
+  }, []);
+
   const [filteredData, setFilteredData] = useState(deals);
 
   const updateSearch = (search) => {
@@ -846,6 +914,17 @@ function SignUpScreen({ navigation }) {
   const [password, setPassword] = useState();
   const isSignUpDisabled = false
 
+  const onSignUp = async () => {
+    try {
+      const data = await signup(email, password);
+      console.log(data)
+      Alert.alert('Sign Up Successful', 'Welcome!');
+      navigation.navigate('Home');
+    } catch (error) {
+      Alert.alert('Sign Up Failed', error.message);
+    }
+  }
+
   return (
     <View className="flex-1 py-[24] px-[36] ">
       <View className="flex flex-col gap-2 pb-6 w-full">
@@ -876,7 +955,7 @@ function SignUpScreen({ navigation }) {
           secureTextEntry={true}
         />
       </View>
-      <Pressable disabled={isSignUpDisabled} onPress={() => { navigation.navigate('Home') }} className={`${isSignUpDisabled ? "bg-blue-200" : "bg-blue-800"} active:bg-blue-700 rounded-md`}>
+      <Pressable disabled={isSignUpDisabled} onPress={onSignUp} className={`${isSignUpDisabled ? "bg-blue-200" : "bg-blue-800"} active:bg-blue-700 rounded-md`}>
         <Text className="text-white font-bold p-3 text-lg rounded-md text-center w-full">Continue</Text>
       </Pressable>
     </View >
@@ -889,8 +968,14 @@ function LoginScreen({ navigation }) {
   const isLoginDisabled = !email || !password;
   const [tapCount, setTapCount] = useState(0);
 
-  const onLogin = () => {
-    // TODO: Add firebase authentication here
+  const onLogin = async () => {
+    try {
+      const data = await login(email, password);
+      Alert.alert('Login Successful', 'Welcome!');
+      navigation.navigate('Home');
+    } catch (error) {
+      Alert.alert('Login Failed', error.message);
+    }
     console.log(email, password);
     navigation.navigate('Home')
   }

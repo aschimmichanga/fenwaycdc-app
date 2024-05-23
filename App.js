@@ -525,6 +525,7 @@ function AdminDashboardScreen({ navigation }) {
         setTopAdImage(response.imageUrl);
       } catch (error) {
         console.error('Failed to fetch top ad: ', error.message);
+        Alert.alert('Error', 'Failed to fetch the top ad. ' + error.message);
       }
     };
 
@@ -641,6 +642,7 @@ function HomeScreen({ navigation }) {
         setTopAdImage(response.data.imageUrl);
       } catch (error) {
         console.error('Failed to fetch top ad: ', error.message);
+        Alert.alert('Error', 'Failed to fetch the top ad. ' + error.message);
       }
     };
 

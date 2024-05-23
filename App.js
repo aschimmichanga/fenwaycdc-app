@@ -10,10 +10,13 @@ import LinearGradient from 'react-native-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { login, signup } from './src/AuthenticationService';
-import { getDeals, createDeal, updateDeal, createDiscount } from './src/DealService';
+import { getOrganizations, createOrganization, updateOrganization, deleteOrganization } from './src/OrganizationService';
+import { createDiscount, updateDiscount, deleteDiscount } from './src/DiscountService';
+import { getAdminImage, setAdminImage, verifyPin } from './src/AdminService'
 import axios from 'axios';
-import { updateDiscount } from './src/DiscountService';
 import { v4 as uuidv4 } from 'uuid';
+import 'react-native-dotenv';
+import { CLOUDINARY_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -26,7 +29,7 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={{ flex: 1 }}>
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="AdminDashboard">
+          <Stack.Navigator initialRouteName="Login">
             <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Login', headerBackVisible: false }} />
             <Stack.Screen name="Signup" component={SignUpScreen} options={{ title: 'Sign Up' }} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
@@ -133,7 +136,8 @@ export default function App() {
 }
 
 function EditDiscountScreen({ route, navigation }) {
-  const id = route.params?.id;
+  const organizationId = route.params?.organizationId;
+  const discountId = route.params?.discountId;
   const discount = route.params?.discount ?? "";
   const expiry = route.params?.expiry ? new Date(route.params.expiry) : new Date();
 
@@ -143,17 +147,17 @@ function EditDiscountScreen({ route, navigation }) {
 
   const handleSave = async () => {
     try {
-      updateDiscount(id, { discount: deal, expiry: date });
+      await updateDiscount(organizationId, discountId, { description: deal, expiry: date });
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', error.message);
+      Alert.alert('Error', "Failed to save discount: " + error.message);
     }
   };
 
   const handleDelete = async () => {
     try {
-      deleteDiscount(id);
+      await deleteDiscount(organizationId, discountId);
       navigation.goBack();
     } catch (error) {
       console.error(error);
@@ -212,12 +216,13 @@ function EditDiscountScreen({ route, navigation }) {
   );
 }
 
-function CreateDiscountScreen({ navigation }) {
+function CreateDiscountScreen({ navigation, route }) {
+  const organizationId = route.params?.organizationId;
   const [deal, setDeal] = useState('')
   const [date, setDate] = useState(new Date());
 
   const handleSave = async () => {
-    await createDiscount({ discount: deal, expiry: date });
+    await createDiscount(organizationId, { description: deal, expiry: date });
     navigation.goBack();
   };
 
@@ -279,16 +284,47 @@ function EditOrganizationScreen({ navigation, route }) {
     }
   };
 
+  const uploadImage = async (uri) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      name: `${uuidv4()}_${organization.name}_banner.jpg`,
+      type: 'image/jpeg'
+    });
+    formData.append('upload_preset', 'ml_default');
+
+    try {
+      const response = await axios.post(CLOUDINARY_URL, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data.url;
+    } catch (error) {
+      console.error('Image upload failed: ', error.message);
+      return null;
+    }
+  };
+
   const saveOrganization = async () => {
     try {
-      if (organizationId) {
-        await updateDeal(organizationId, organization)
-      } else {
-        await createDeal(organization)
+      let imageUrl = organization.imageUrl;
+      if (organization.imageUrl && !organization.imageUrl.startsWith('http')) {
+        imageUrl = await uploadImage(organization.imageUrl);
       }
+
+      const updatedOrganization = { ...organization, imageUrl };
+
+      if (organizationId) {
+        await updateOrganization(organizationId, updatedOrganization);
+      } else {
+        await createOrganization(updatedOrganization);
+      }
+
       navigation.goBack();
     } catch (error) {
       console.error(error);
+      Alert.alert('Error', 'Failed to save the organization.');
     }
   };
 
@@ -333,7 +369,7 @@ function EditOrganizationScreen({ navigation, route }) {
                 {organization.deals.map((deal, dealId) => (
                   <Pressable
                     key={dealId}
-                    onPress={() => navigation.navigate('EditDiscount', { id: deal._id, deal })}
+                    onPress={() => navigation.navigate('EditDiscount', { organizationId: organization._id, discountId: deal._id, deal })}
                     style={{ backgroundColor: "white", width: '75%' }}
                     className="bg-white w-3/4 h-auto p-2 pt-0">
                     <View className="flex flex-row">
@@ -354,7 +390,7 @@ function EditOrganizationScreen({ navigation, route }) {
             </View>
           </View>
         )}
-        <Pressable onPress={() => navigation.navigate("CreateDiscount")} className={`bg-white ${organization.deals.length > 0 ? "rounded-b-lg" : "rounded-lg"} shadow-sm`} style={{ borderWidth: 1, borderColor: '#EDEDED' }}>
+        <Pressable onPress={() => navigation.navigate("CreateDiscount", { organizationId })} className={`bg-white ${organization.deals.length > 0 ? "rounded-b-lg" : "rounded-lg"} shadow-sm`} style={{ borderWidth: 1, borderColor: '#EDEDED' }}>
           <Text className="text-gray-600 p-3 text-lg text-center w-full">Create deal +</Text>
         </Pressable>
         <Pressable onPress={() => { navigation.goBack() }} className="mt-4 border-2 border-red-200 bg-white rounded-lg shadow-sm mb-10">
@@ -391,20 +427,20 @@ function AddOrganizationScreen({ navigation }) {
     const formData = new FormData();
     formData.append('file', {
       uri,
-      name: `${uuidv4()}_organization_banner.jpg`,
+      name: `${uuidv4()}_${organizationName}_banner.jpg`,
       type: 'image/jpeg'
     });
     formData.append('upload_preset', 'ml_default');
 
     try {
-      const response = await axios.post(process.env.CLOUDINARY_URL, formData, {
+      const response = await axios.post(CLOUDINARY_URL, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       return response.data.url;
     } catch (error) {
-      console.error('Image upload failed:', error);
+      console.error('Image upload failed: ', error.message);
       return null;
     }
   };
@@ -416,14 +452,14 @@ function AddOrganizationScreen({ navigation }) {
         imageUrl = await uploadImage(image);
       }
 
-      createDeal({
+      await createOrganization({
         name: organizationName,
         details: organizationDescription,
         imageUrl: imageUrl,
       })
       navigation.goBack();
     } catch (error) {
-      console.error('Failed to save organization:', error);
+      console.error('Failed to save organization: ', error.message);
     }
   };
 
@@ -470,24 +506,33 @@ function AddOrganizationScreen({ navigation }) {
 }
 
 function AdminDashboardScreen({ navigation }) {
-  const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
-  const [deals, setDeals] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [topAdImage, setTopAdImage] = useState("");
 
   useEffect(() => {
-    const fetchDeals = async () => {
+    const fetchOrganizations = async () => {
       try {
-        const data = await getDeals();
-        setDeals(data);
+        const data = await getOrganizations();
+        setOrganizations(data);
       } catch (error) {
         Alert.alert('Error', error.message);
       }
     };
 
-    fetchDeals();
+    const fetchTopAd = async () => {
+      try {
+        const response = await getAdminImage();
+        setTopAdImage(response.imageUrl);
+      } catch (error) {
+        console.error('Failed to fetch top ad: ', error.message);
+      }
+    };
+
+    fetchOrganizations();
+    fetchTopAd();
   }, []);
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
@@ -495,12 +540,37 @@ function AdminDashboardScreen({ navigation }) {
       quality: 1,
     });
 
-    console.log(result);
-
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const imageUrl = await uploadImage(result.assets[0].uri);
+      if (imageUrl) {
+        setTopAdImage(imageUrl);
+        await setAdminImage(imageUrl);
+      }
     }
   };
+
+  const uploadImage = async (uri) => {
+    const formData = new FormData();
+    formData.append('file', {
+      uri,
+      name: `top_ad.jpg`,
+      type: 'image/jpeg'
+    });
+    formData.append('upload_preset', 'ml_default');
+
+    try {
+      const response = await axios.post(CLOUDINARY_URL, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data.url;
+    } catch (error) {
+      console.error('Image upload failed: ', error.message);
+      return null;
+    }
+  };
+
   return (
     <View className="pt-4 px-8 pb-[100] bg-white h-full">
       <View className="flex flex-row justify-between pb-2">
@@ -510,21 +580,21 @@ function AdminDashboardScreen({ navigation }) {
       </View>
       <View className="rounded-2xl" style={{ height: 270, borderWidth: 2, borderColor: '#EDEDED', borderRadius: 8 }} >
         <ScrollView className="flex">
-          {deals.map((deal, index) => (
+          {organizations.map((org, index) => (
             <Pressable
               key={index}
-              onPress={() => { navigation.navigate('EditOrganization', { id: deal._id, deal }) }}
+              onPress={() => { navigation.navigate('EditOrganization', { id: org._id, deal: org }) }}
               style={{ backgroundColor: "white", width: width * 0.75 }}
               className="bg-white w-3/4 h-auto p-2">
               <View className="flex flex-row">
                 <Image
-                  source={{ uri: deal.imageUrl }}
+                  source={{ uri: org.imageUrl }}
                   style={{ height: 50, width: 50, borderRadius: 18 }}
                   resizeMode='cover'
                 />
                 <View className="flex flex-col pl-4">
-                  <Text className="font-bold text-lg">{deal.name}</Text>
-                  <Text className={(deal.discounts.length > 0) ? "text-blue-800" : "text-gray-500"}>{deal.discounts.length} promotion{(deal.discounts.length != 1) && "s"}</Text>
+                  <Text className="font-bold text-lg">{org.name}</Text>
+                  <Text className={(org.discounts.length > 0) ? "text-blue-800" : "text-gray-500"}>{org.discounts.length} promotion{(org.discounts.length !== 1) && "s"}</Text>
                 </View>
               </View>
             </Pressable>
@@ -544,29 +614,38 @@ function AdminDashboardScreen({ navigation }) {
       </View>
       <Image
         className="rounded-md"
-        source={{ uri: top_ad }}
+        source={{ uri: topAdImage }}
         resizeMode="cover"
         style={{ height: 180 }}
       />
-    </View >
+    </View>
   )
 }
 
 function HomeScreen({ navigation }) {
-  const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
+  const [topAd, setTopAdImage] = useState("");
   const [deals, setDeals] = useState([]);
 
   useEffect(() => {
     const fetchDeals = async () => {
       try {
-        const data = await getDeals();
+        const data = await getOrganization();
         setDeals(data);
       } catch (error) {
         Alert.alert('Error', error.message);
       }
     };
+    const fetchTopAd = async () => {
+      try {
+        const response = await getAdminImage();
+        setTopAdImage(response.data.imageUrl);
+      } catch (error) {
+        console.error('Failed to fetch top ad: ', error.message);
+      }
+    };
 
     fetchDeals();
+    fetchTopAd();
   }, []);
 
   return (
@@ -574,7 +653,7 @@ function HomeScreen({ navigation }) {
       <TouchableOpacity onPress={() => { openLink("https://www.fenwaycdc.org/events/tasteofthefenway/") }} className="flex flex-col">
         <Image
           className="rounded-md mx-5"
-          source={{ uri: top_ad }}
+          source={{ uri: topAd }}
           resizeMode="cover"
           style={{ height: 180 }}
         />
@@ -645,14 +724,14 @@ function HomeScreen({ navigation }) {
 
 function AdminLoginScreen({ navigation }) {
   const [pin, setPin] = useState('');
-  const correctPin = '1234';  // This should ideally be stored and managed more securely
 
-  const handleUnlock = () => {
-    if (pin === correctPin) {
-      navigation.navigate('AdminDashboard')
+  const handleUnlock = async () => {
+    const isCorrectPin = await verifyPin(pin);
+    if (isCorrectPin) {
+      navigation.navigate('AdminDashboard');
     } else {
       Alert.alert("Access Denied", "Incorrect PIN entered.");
-      setPin('');  // Reset PIN on failure
+      setPin('');
     }
   };
 
@@ -690,7 +769,7 @@ function SettingsScreen() {
       });
       Alert.alert('Success', 'Your settings have been updated.');
     } catch (error) {
-      Alert.alert('Error', 'Failed to update settings.');
+      Alert.alert('Error', 'Failed to update settings. ' + error.message);
     }
   };
 
@@ -841,7 +920,7 @@ function DealsScreen({ navigation }) {
   useEffect(() => {
     const fetchDeals = async () => {
       try {
-        const data = await getDeals();
+        const data = await getOrganizations();
         setDeals(data);
       } catch (error) {
         Alert.alert('Error', error.message);

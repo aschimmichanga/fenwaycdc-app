@@ -1,36 +1,36 @@
 // DiscountService.js
 import api from './api';
 
-export const getDiscounts = async () => {
+export const getDiscounts = async (organizationId) => {
     try {
-        const response = await api.get('/discounts');
+        const response = await api.get(`/organizations/${organizationId}/discounts`);
         return response.data;
     } catch (error) {
         throw error.response.data;
     }
 };
 
-export const createDiscount = async (discount) => {
+export const createDiscount = async (organizationId, discount) => {
     try {
-        const response = await api.post('/discounts', discount);
+        const response = await api.post(`/organizations/${organizationId}/discounts`, { discount });
         return response.data;
     } catch (error) {
         throw error.response.data;
     }
 };
 
-export const updateDiscount = async (id, discount) => {
+export const updateDiscount = async (organizationId, discountId, discount) => {
     try {
-        const response = await api.put(`/discounts/${id}`, discount);
+        const response = await api.put(`/organizations/${organizationId}/discounts/${discountId}`, discount);
         return response.data;
     } catch (error) {
         throw error.response.data;
     }
 };
 
-export const deleteDiscount = async (id) => {
+export const deleteDiscount = async (organizationId, discountId) => {
     try {
-        await api.delete(`/discounts/${id}`);
+        await api.delete(`/organizations/${organizationId}/discounts/${discountId}`);
     } catch (error) {
         throw error.response.data;
     }

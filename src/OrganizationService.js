@@ -1,7 +1,7 @@
 // Example: DealService.js
 import api from './api';
 
-export const getDeals = async () => {
+export const getOrganization = async () => {
     try {
         const response = await api.get('/organizations');
         return response.data;
@@ -10,7 +10,7 @@ export const getDeals = async () => {
     }
 };
 
-export const createDeal = async (deal) => {
+export const createOrganization = async (deal) => {
     try {
         const response = await api.post('/organizations', deal);
         return response.data;
@@ -19,7 +19,7 @@ export const createDeal = async (deal) => {
     }
 };
 
-export const updateDeal = async (id, deal) => {
+export const updateOrganization = async (id, deal) => {
     try {
         const response = await api.put(`/organizations/${id}`, deal);
         return response.data;
@@ -28,7 +28,7 @@ export const updateDeal = async (id, deal) => {
     }
 };
 
-export const deleteDeal = async (id) => {
+export const deleteOrganization = async (id) => {
     try {
         await api.delete(`/organizations/${id}`);
     } catch (error) {

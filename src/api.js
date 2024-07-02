@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://fenwaycdc-backend.herokuapp.com';
+const API_BASE_URL = "https://fenwaycdc-backend-ae81fd032a17.herokuapp.com/";
 
 const api = axios.create({
     baseURL: API_BASE_URL,

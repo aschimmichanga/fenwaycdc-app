@@ -15,8 +15,7 @@ import { createDiscount, updateDiscount, deleteDiscount } from './src/DiscountSe
 import { getAdminImage, setAdminImage, verifyPin } from './src/AdminService'
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import 'react-native-dotenv';
-import { CLOUDINARY_URL } from '@env';
+const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dguy8o0uf/image/upload';
 
 const width = Dimensions.get('window').width;
 

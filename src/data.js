@@ -12,7 +12,7 @@ export const categoriesImages = {
 
 export const top_ad = "https://res.cloudinary.com/dguy8o0uf/image/upload/v1714426043/Taste_of_The_Fenway_logo_3_3_oop4zg.jpg"
 
-export const deals = [
+export const organizations = [
     {
         id: 1,
         name: 'Tenderoni\'s',

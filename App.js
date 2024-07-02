@@ -9,13 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import LinearGradient from 'react-native-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { login, signup } from './src/AuthenticationService';
-import { getOrganizations, createOrganization, updateOrganization, deleteOrganization } from './src/OrganizationService';
-import { createDiscount, updateDiscount, deleteDiscount } from './src/DiscountService';
-import { getAdminImage, setAdminImage, verifyPin } from './src/AdminService'
-import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
-const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dguy8o0uf/image/upload';
+import { organizations, top_ad } from './src/data';
 
 const width = Dimensions.get('window').width;
 
@@ -135,8 +129,6 @@ export default function App() {
 }
 
 function EditDiscountScreen({ route, navigation }) {
-  const organizationId = route.params?.organizationId;
-  const discountId = route.params?.discountId;
   const discount = route.params?.discount ?? "";
   const expiry = route.params?.expiry ? new Date(route.params.expiry) : new Date();
 
@@ -145,23 +137,11 @@ function EditDiscountScreen({ route, navigation }) {
   const [editMode, setEditMode] = useState(false);
 
   const handleSave = async () => {
-    try {
-      await updateDiscount(organizationId, discountId, { description: deal, expiry: date });
-      navigation.goBack();
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', "Failed to save discount: " + error.message);
-    }
+    navigation.goBack();
   };
 
   const handleDelete = async () => {
-    try {
-      await deleteDiscount(organizationId, discountId);
-      navigation.goBack();
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', error.message);
-    }
+    navigation.goBack();
   };
 
   return (
@@ -216,12 +196,10 @@ function EditDiscountScreen({ route, navigation }) {
 }
 
 function CreateDiscountScreen({ navigation, route }) {
-  const organizationId = route.params?.organizationId;
   const [deal, setDeal] = useState('')
   const [date, setDate] = useState(new Date());
 
   const handleSave = async () => {
-    await createDiscount(organizationId, { description: deal, expiry: date });
     navigation.goBack();
   };
 
@@ -283,43 +261,8 @@ function EditOrganizationScreen({ navigation, route }) {
     }
   };
 
-  const uploadImage = async (uri) => {
-    const formData = new FormData();
-    formData.append('file', {
-      uri,
-      name: `${uuidv4()}_${organization.name}_banner.jpg`,
-      type: 'image/jpeg'
-    });
-    formData.append('upload_preset', 'ml_default');
-
-    try {
-      const response = await axios.post(CLOUDINARY_URL, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data.url;
-    } catch (error) {
-      console.error('Image upload failed: ', error.message);
-      return null;
-    }
-  };
-
   const saveOrganization = async () => {
     try {
-      let imageUrl = organization.imageUrl;
-      if (organization.imageUrl && !organization.imageUrl.startsWith('http')) {
-        imageUrl = await uploadImage(organization.imageUrl);
-      }
-
-      const updatedOrganization = { ...organization, imageUrl };
-
-      if (organizationId) {
-        await updateOrganization(organizationId, updatedOrganization);
-      } else {
-        await createOrganization(updatedOrganization);
-      }
-
       navigation.goBack();
     } catch (error) {
       console.error(error);
@@ -422,40 +365,8 @@ function AddOrganizationScreen({ navigation }) {
     }
   };
 
-  const uploadImage = async (uri) => {
-    const formData = new FormData();
-    formData.append('file', {
-      uri,
-      name: `${uuidv4()}_${organizationName}_banner.jpg`,
-      type: 'image/jpeg'
-    });
-    formData.append('upload_preset', 'ml_default');
-
-    try {
-      const response = await axios.post(CLOUDINARY_URL, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data.url;
-    } catch (error) {
-      console.error('Image upload failed: ', error.message);
-      return null;
-    }
-  };
-
   const saveOrganization = async () => {
     try {
-      let imageUrl = image;
-      if (image !== uploadPlaceholder) {
-        imageUrl = await uploadImage(image);
-      }
-
-      await createOrganization({
-        name: organizationName,
-        details: organizationDescription,
-        imageUrl: imageUrl,
-      })
       navigation.goBack();
     } catch (error) {
       console.error('Failed to save organization: ', error.message);
@@ -505,32 +416,8 @@ function AddOrganizationScreen({ navigation }) {
 }
 
 function AdminDashboardScreen({ navigation }) {
-  const [organizations, setOrganizations] = useState([]);
-  const [topAdImage, setTopAdImage] = useState("");
-
-  useEffect(() => {
-    const fetchOrganizations = async () => {
-      try {
-        const data = await getOrganizations();
-        setOrganizations(data);
-      } catch (error) {
-        Alert.alert('Error', error.message);
-      }
-    };
-
-    const fetchTopAd = async () => {
-      try {
-        const response = await getAdminImage();
-        setTopAdImage(response.imageUrl);
-      } catch (error) {
-        console.error('Failed to fetch top ad: ', error.message);
-        Alert.alert('Error', 'Failed to fetch the top ad. ' + error.message);
-      }
-    };
-
-    fetchOrganizations();
-    fetchTopAd();
-  }, []);
+  const [organizations, setOrganizations] = useState(organizations);
+  const [topAdImage, setTopAdImage] = useState(top_ad);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -539,37 +426,7 @@ function AdminDashboardScreen({ navigation }) {
       aspect: [4, 3],
       quality: 1,
     });
-
-    if (!result.canceled) {
-      const imageUrl = await uploadImage(result.assets[0].uri);
-      if (imageUrl) {
-        setTopAdImage(imageUrl);
-        await setAdminImage(imageUrl);
-      }
-    }
-  };
-
-  const uploadImage = async (uri) => {
-    const formData = new FormData();
-    formData.append('file', {
-      uri,
-      name: `top_ad.jpg`,
-      type: 'image/jpeg'
-    });
-    formData.append('upload_preset', 'ml_default');
-
-    try {
-      const response = await axios.post(CLOUDINARY_URL, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data.url;
-    } catch (error) {
-      console.error('Image upload failed: ', error.message);
-      return null;
-    }
-  };
+  }
 
   return (
     <View className="pt-4 px-8 pb-[100] bg-white h-full">
@@ -623,31 +480,8 @@ function AdminDashboardScreen({ navigation }) {
 }
 
 function HomeScreen({ navigation }) {
-  const [topAd, setTopAdImage] = useState("");
-  const [deals, setDeals] = useState([]);
-
-  useEffect(() => {
-    const fetchDeals = async () => {
-      try {
-        const data = await getOrganization();
-        setDeals(data);
-      } catch (error) {
-        Alert.alert('Error', error.message);
-      }
-    };
-    const fetchTopAd = async () => {
-      try {
-        const response = await getAdminImage();
-        setTopAdImage(response.data.imageUrl);
-      } catch (error) {
-        console.error('Failed to fetch top ad: ', error.message);
-        Alert.alert('Error', 'Failed to fetch the top ad. ' + error.message);
-      }
-    };
-
-    fetchDeals();
-    fetchTopAd();
-  }, []);
+  const [topAd, setTopAdImage] = useState(top_ad);
+  const [deals, setDeals] = useState(organizations);
 
   return (
     <ScrollView className="pt-10 pb-[100] bg-white h-full">
@@ -727,13 +561,7 @@ function AdminLoginScreen({ navigation }) {
   const [pin, setPin] = useState('');
 
   const handleUnlock = async () => {
-    const isCorrectPin = await verifyPin(pin);
-    if (isCorrectPin) {
-      navigation.navigate('AdminDashboard');
-    } else {
-      Alert.alert("Access Denied", "Incorrect PIN entered.");
-      setPin('');
-    }
+    navigation.navigate('AdminDashboard');
   };
 
   return (
@@ -916,20 +744,7 @@ function DealDetailsScreen({ route, navigation }) {
 
 function DealsScreen({ navigation }) {
   const [search, setSearch] = useState("");
-  const [deals, setDeals] = useState([]);
-
-  useEffect(() => {
-    const fetchDeals = async () => {
-      try {
-        const data = await getOrganizations();
-        setDeals(data);
-      } catch (error) {
-        Alert.alert('Error', error.message);
-      }
-    };
-
-    fetchDeals();
-  }, []);
+  const [deals, setDeals] = useState(organizations);
 
   const [filteredData, setFilteredData] = useState(deals);
 
@@ -1051,7 +866,6 @@ function SignUpScreen({ navigation }) {
 
   const onSignUp = async () => {
     try {
-      const data = await signup(email, password);
       console.log(data)
       Alert.alert('Sign Up Successful', 'Welcome!');
       navigation.navigate('Home');
@@ -1104,14 +918,13 @@ function LoginScreen({ navigation }) {
   const [tapCount, setTapCount] = useState(0);
 
   const onLogin = async () => {
-    try {
-      const data = await login(email, password);
-      Alert.alert('Login Successful', 'Welcome!');
-      navigation.navigate('Home');
-    } catch (error) {
-      Alert.alert('Login Failed', error.message);
-    }
-    console.log(email, password);
+    // try {
+    //   const data = await login(email, password);
+    //   Alert.alert('Login Successful', 'Welcome!');
+    //   navigation.navigate('Home');
+    // } catch (error) {
+    //   Alert.alert('Login Failed', error.message);
+    // }
     navigation.navigate('Home')
   }
 
